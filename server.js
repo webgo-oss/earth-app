@@ -16,31 +16,23 @@ app.get('/api/config', (req, res) => {
     ship: process.env.AISSTREAM_KEY
   });
 });
-let cachedFlights = null;
-let lastFetchTime = 0;
-
 app.get('/api/flights', async (req, res) => {
-    const now = Date.now();
-
-    if (cachedFlights && now - lastFetchTime < 20000) {
-        return res.json(cachedFlights);
-    }
-
     try {
-        const response = await axios.get('https://opensky-network.org/api/states/all');
-        
-        cachedFlights = response.data;
-        lastFetchTime = now;
+        const response = await axios.get(
+            'https://opensky-network.org/api/states/all?lamin=5&lomin=65&lamax=40&lomax=100',
+            { timeout: 10000 }
+        );
+
+        console.log("Flights count:", response.data.states?.length);
 
         res.json(response.data);
 
     } catch (error) {
         console.error("OpenSky Error:", error.message);
 
-        res.json(cachedFlights || { states: [] });
+        res.json({ states: [] }); // fallback
     }
 });
-
 app.get('/api/tracks', async (req, res) => {
     try {
         const { icao24 } = req.query;
