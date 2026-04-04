@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earth Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+    <link rel="icon" href="data:,">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/5.0.0/satellite.min.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.120/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link rel="stylesheet" href="./stylesheets/style.css">
+</head>
+<body data-mode="nvg">
+
+    <div class="app-container">
+        
+        <div class="left-info-strip">
+            <div class="info-row">
+                <span class="i-label">LAYERS</span>
+                <span class="i-val" id="strip-layers">00</span>
+            </div>
+            <div class="info-row">
+                <span class="i-label">OBJECTS</span>
+                <span class="i-val" id="strip-objects">00</span>
+            </div>
+            <div class="info-row">
+                <span class="i-label">MODE</span>
+                <span class="i-val" id="strip-mode">STD</span>
+            </div>
+        </div>
+
+        <aside class="left-sidebar">
+            <div class="sidebar-controls">
+               <div class="logo-box">
+    <i class="fa-solid fa-earth-asia"></i>
+</div>
+<div class="toggle-box" data-name="Satellite Tracker" id="satalite">
+    <i class="fa-solid fa-satellite"></i>
+</div>
+<div class="toggle-box" data-name="Live Flights" id="toggle-flights">
+    <i class="fa-solid fa-plane"></i>
+</div>
+<div class="toggle-box" data-name="Military Ops" id="toggle-milflights">
+    <i class="fa-solid fa-jet-fighter"></i>
+</div>
+<div class="toggle-box" data-name="Street Traffic" id="see-traffic">
+    <i class="fa-solid fa-car"></i>
+</div>
+<div class="toggle-box" data-name="Active Ships" id="ships">
+    <i class="fa-solid fa-ship"></i>
+</div>
+<div class="toggle-box" data-name="Weather Radar" id="weather">
+    <i class="fa-solid fa-cloud-bolt"></i>
+</div>
+            </div>
+
+            <div class="sidebar-footer">
+                <div class="tracked-count" id="tracked-num">00</div>
+                <div class="tracked-label">Tracked</div>
+            </div>
+        </aside>
+
+        <main class="center-space">
+            <div class="center-glow"></div>
+            <div id="cesiumContainer"></div>
+            
+            <div class="intel-box">
+                <div class="intel-header">
+                    <div class="intel-title">
+                        <i class="fa-solid fa-terminal"></i>
+                        SYSTEM INTEL
+                    </div>
+                    <div class="intel-indicator"></div>
+                </div>
+                <div class="intel-log" id="intel-log">
+                </div>
+            </div>
+
+            <div class="floating-telemetry">
+                <div class="telemetry-status">
+                    <div class="live-badge-float">
+                        <div class="live-dot"></div>
+                        SYSTEM LIVE
+                    </div>
+                </div>
+                
+                <div class="coords-list">
+                    <div class="coord-row">
+                        <span class="coord-label">LAT</span>
+                        <span class="coord-val" id="lat-val"></span>
+                    </div>
+                    <div class="coord-row">
+                        <span class="coord-label">LON</span>
+                        <span class="coord-val" id="lon-val"></span>
+                    </div>
+                    <div class="coord-row">
+                        <span class="coord-label">ALT</span>
+                        <span class="coord-val" id="alt-val"></span>
+                    </div>
+                    <div class="coord-row">
+                        <span class="coord-label">UTC</span>
+                        <span class="coord-val" id="utc-time">--:--:--</span>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <aside class="right-sidebar">
+            
+            <div class="search-container">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="searchBox" placeholder="Search...">
+            </div>
+
+            <div class="section-label">Active Nodes</div>
+            <div class="city-grid">
+<div class="city-box" data-city="Global"><i class="fa-solid fa-earth-americas"></i></div>
+<div class="city-box" data-city="New York"><i class="fa-solid fa-city"></i></div>
+<div class="city-box" data-city="London"><i class="fa-solid fa-landmark"></i></div>
+<div class="city-box" data-city="Tokyo"><i class="fa-solid fa-place-of-worship"></i></div>
+<div class="city-box" data-city="Berlin"><i class="fa-solid fa-monument"></i></div>
+<div class="city-box" data-city="Dubai"><i class="fa-solid fa-building"></i></div>
+<div class="city-box" data-city="Paris"><i class="fa-solid fa-archway"></i></div>
+<div class="city-box" data-city="Rome"><i class="fa-solid fa-landmark-dome"></i></div>
+<div class="city-box" data-city="Singapore"><i class="fa-solid fa-tree"></i></div>
+<div class="city-box" data-city="Sydney"><i class="fa-solid fa-umbrella-beach"></i></div>
+<div class="city-box" data-city="Seoul"><i class="fa-solid fa-globe"></i></div>
+<div class="city-box" data-city="Moscow"><i class="fa-solid fa-star"></i></div>
+<div class="city-box" data-city="Toronto"><i class="fa-solid fa-leaf"></i></div>
+<div class="city-box" data-city="Cairo"><i class="fa-solid fa-cube"></i></div>
+<div class="city-box" data-city="Mumbai"><i class="fa-solid fa-om"></i></div>
+<div class="city-box" data-city="Sao Paulo"><i class="fa-solid fa-mountain-sun"></i></div>
+<div class="city-box" data-city="Mexico City"><i class="fa-solid fa-mountain"></i></div>
+<div class="city-box" data-city="Cape Town"><i class="fa-solid fa-anchor"></i></div>
+            </div>
+
+            <div class="section-label">Telemetry Mode</div>
+            <div class="mode-grid">
+                <button class="mode-btn active" data-mode="std">
+                    <i class="fa-solid fa-chart-simple"></i>
+                    STD
+                </button>
+                <button class="mode-btn" data-mode="night">
+                    <i class="fa-solid fa-eye"></i>
+                    NIGHT
+                </button>
+                <button class="mode-btn" data-mode="uv">
+                     <i class="fa-solid fa-sun"></i>
+                        UV
+                </button>
+                <button class="mode-btn" data-mode="flir">
+                    <i class="fa-solid fa-temperature-high"></i>
+                    FLIR
+                </button>
+                <button class="mode-btn" data-mode="ctv">
+                    <i class="fa-solid fa-video"></i>
+                    CTV
+                </button>
+            </div>
+
+            <div class="section-label">Map Projection</div>
+            <div class="map-view-grid">
+                <button class="map-btn active" data-view="3d">
+                    <i class="fa-solid fa-cube"></i> 3D VIEW
+                </button>
+                <button class="map-btn" data-view="2d">
+                    <i class="fa-solid fa-map"></i> 2D VIEW
+                </button>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-title">
+                    <i class="fa-solid fa-wave-square"></i>
+                    Orbital Analysis
+                </div>
+
+                <div class="chart-block">
+                    <div id="chart1" class="echart-container"></div>
+                    <div class="chart-value" id="val1"></div>
+                </div>
+
+                <div class="chart-divider"></div>
+
+                <div class="chart-block">
+                    <div id="chart2" class="echart-container"></div>
+                    <div class="chart-value" id="val2"></div>
+                </div>
+
+               <div class="chart-stats">
+    <div class="stat-group">
+        <small>Current Speed</small>
+        <b id="secspeed"><%= orbitalData ? orbitalData.speed_kms : 'Loading...' %> km/s</b>
+    </div>
+    <div class="stat-group" style="text-align: right;">
+        <small>Hourly Speed</small>
+        <b id="hourspeed"><%= orbitalData ? orbitalData.speed_kmh : 'Loading...' %> km/h</b>
+    </div>
+</div>
+
+<div class="chart-list">
+    <div>
+        <span>Distance from Earth</span>
+        <span id="dts"><%= orbitalData ? orbitalData.distance_km : 'Loading...' %> km</span>
+    </div>
+    <div>
+        <span>Radial Velocity</span>
+        <span id="rv"><%= orbitalData ? orbitalData.radialVelocity : 'Loading...' %> km/s</span>
+    </div>
+    <div>
+        <span>One-Way Light Time</span>
+        <span id="ltt"><%= orbitalData ? orbitalData.lightTime : 'Loading...' %> s</span>
+    </div>
+</div>
+
+    <div id="toast" class="toast"><i class="fa-solid fa-circle-check"></i> <span id="toast-msg">Action</span></div>
+<script src="./javascripts/logic.js" defer></script>
+<script src="https://cesium.com/downloads/cesiumjs/releases/1.120/Build/Cesium/Cesium.js"></script>
+<script type="module" src="./javascripts/earth.js" defer></script>
+<script src="./javascripts/TelemetryMode.js" defer></script>
+<script src="/activelayers/flight.js" defer></script>
+<script src="/activelayers/milflights.js" defer></script>
+<script src="/activelayers/seetraffic.js" defer></script>
+<script src="/activelayers/satalite.js" defer></script>
+<script src="/activelayers/ship.js" defer></script>
+<script src="/activelayers/weather.js" defer></script>
+</body>
+</html>

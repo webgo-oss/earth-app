@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earth</title>
+<link rel="stylesheet" href="./stylesheets/main.css">
+</head>
+<body>
+
+    <canvas id="webgl-canvas"></canvas>
+
+<div class="ui-container">
+    
+    <header>
+        <div class="logo">EarthView</div>
+        <nav class="main-nav">
+            <p>TRACKING</p>
+        </nav>
+    </header>
+
+    <div class="content">
+        <nav class="sub-nav">
+            <a href="#" class="active">Earth Monitor</a>
+        </nav>
+
+        <div class="mission-title">Mission: Real-Time Earth Intelligence</div>
+        <h1 class="hero-title">Geo Tracker</h1>
+        
+        <p class="description">
+            A real-time geographic monitoring system designed to track environmental changes, 
+            human activity, and live location data across the globe. Geo Tracker provides 
+            accurate insights using satellite data, sensors, and advanced visualization tools 
+            to help analyze patterns and make informed decisions.
+        </p>
+
+        <a href="/index" class="read-more">View Live Data <span>⊕</span></a>
+    </div>
+
+    <div class="footer-stats">
+       <div class="stat-item">
+    <div class="stat-label">Tracking Mode</div>
+    <div class="stat-value">LIVE GEO-SPATIAL</div>
+</div>
+       <div class="stat-item">
+    <div class="stat-label">Data Sources</div>
+    <div class="stat-value">SATELLITE + Flights + Street Traffic And More </div>
+</div>
+       <div class="stat-item">
+    <div class="stat-label">Core Function</div>
+    <div class="stat-value">REAL-TIME TRACKING</div>
+</div>
+        <div class="stat-item">
+            <div class="stat-label">System Status</div>
+            <div class="stat-value">ONLINE</div>
+        </div>
+    </div>
+
+</div>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+    "meshoptimizer": "https://cdn.jsdelivr.net/npm/meshoptimizer@0.20.0/meshopt_decoder.module.js"
+  }
+}
+</script>
+
+<script type="module" src="./javascripts/main.js" defer></script>
+</body>
+</html>
