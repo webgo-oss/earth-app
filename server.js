@@ -16,21 +16,28 @@ app.get('/api/config', (req, res) => {
     ship: process.env.AISSTREAM_KEY
   });
 });
+let cachedFlights = null;
+let lastFetchTime = 0;
 
 app.get('/api/flights', async (req, res) => {
+    const now = Date.now();
+
+    if (cachedFlights && now - lastFetchTime < 20000) {
+        return res.json(cachedFlights);
+    }
+
     try {
-        const user = process.env.OPENSKY_USER;
-        const pass = process.env.OPENSKY_PASS;
+        const response = await axios.get('https://opensky-network.org/api/states/all');
         
-        const response = await axios.get('https://opensky-network.org/api/states/all', {
-            headers: {
-                'Authorization': 'Basic ' + Buffer.from(`${user}:${pass}`).toString('base64')
-            }
-        });
+        cachedFlights = response.data;
+        lastFetchTime = now;
+
         res.json(response.data);
+
     } catch (error) {
-        console.error("OpenSky States Error:", error.message);
-        res.status(500).json({ error: "Failed to fetch flight states" });
+        console.error("OpenSky Error:", error.message);
+
+        res.json(cachedFlights || { states: [] });
     }
 });
 
