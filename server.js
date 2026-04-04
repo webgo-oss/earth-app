@@ -16,23 +16,24 @@ app.get('/api/config', (req, res) => {
     ship: process.env.AISSTREAM_KEY
   });
 });
+
 app.get('/api/flights', async (req, res) => {
     try {
-        const response = await axios.get(
-            'https://opensky-network.org/api/states/all?lamin=5&lomin=65&lamax=40&lomax=100',
-            { timeout: 10000 }
-        );
-
-        console.log("Flights count:", response.data.states?.length);
-
+        const user = process.env.OPENSKY_USER;
+        const pass = process.env.OPENSKY_PASS;
+        
+        const response = await axios.get('https://opensky-network.org/api/states/all', {
+            headers: {
+                'Authorization': 'Basic ' + Buffer.from(`${user}:${pass}`).toString('base64')
+            }
+        });
         res.json(response.data);
-
     } catch (error) {
-        console.error("OpenSky Error:", error.message);
-
-        res.json({ states: [] }); // fallback
+        console.error("OpenSky States Error:", error.message);
+        res.status(500).json({ error: "Failed to fetch flight states" });
     }
 });
+
 app.get('/api/tracks', async (req, res) => {
     try {
         const { icao24 } = req.query;
