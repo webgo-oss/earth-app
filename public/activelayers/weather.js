@@ -2,32 +2,33 @@ window.WeatherLayer = (function() {
     let pointCollection = null;
     let weatherEnabled = false;
     let clickHandler = null;
-
+    function getFileName(code) {
+        switch (code) {
+            case 0: return "clear-day.svg";
+            case 1: case 2: return "partly-cloudy-day.svg";
+            case 3: return "overcast.svg";
+            case 45: case 48: return "fog.svg";
+            case 51: case 53: case 55: return "drizzle.svg";
+            case 61: case 63: case 65: return "rain.svg";
+            case 71: case 73: case 75: case 77: return "snow.svg";
+            case 80: case 81: case 82: return "extreme-rain.svg";
+            case 95: case 96: case 99: return "thunderstorms-extreme.svg";
+            default: return "not-available.svg";
+        }
+    }
     function getWeatherIconUrl(code) {
-        const baseUrl = "https://basmilius.github.io/weather-icons/production/fill/all/";
-        
-        if (code === 0) return baseUrl + "clear-day.svg";
-        if (code === 1 || code === 2) return baseUrl + "partly-cloudy-day.svg";
-        if (code === 3) return baseUrl + "overcast.svg";
-        if (code === 45 || code === 48) return baseUrl + "fog.svg";
-        if (code >= 51 && code <= 55) return baseUrl + "drizzle.svg";
-        if (code >= 61 && code <= 65) return baseUrl + "rain.svg";
-        if (code >= 71 && code <= 77) return baseUrl + "snow.svg";
-        if (code >= 80 && code <= 82) return baseUrl + "extreme-rain.svg";
-        if (code >= 95) return baseUrl + "thunderstorms-extreme.svg";
-        
-        return baseUrl + "not-available.svg"; 
+        return `https://cdn.jsdelivr.net/gh/basmilius/weather-icons@2.0.0/production/fill/all/${getFileName(code)}`;
     }
 
     function decodeWeatherCode(code) {
         const codes = {
-            0: "Clear Sky", 1: "Mainly Clear", 2: "Partly Cloudy", 3: "Overcast",
-            45: "Dense Fog", 48: "Depositing Rime Fog",
-            51: "Light Drizzle", 53: "Mod. Drizzle", 55: "Dense Drizzle",
+            0: "Sunny", 1: "Mainly Clear", 2: "Partly Cloudy", 3: "Overcast",
+            45: "Fog", 48: "Rime Fog",
+            51: "Drizzle", 53: "Mod. Drizzle", 55: "Dense Drizzle",
             61: "Slight Rain", 63: "Moderate Rain", 65: "Heavy Rain",
             71: "Slight Snow", 73: "Moderate Snow", 75: "Heavy Snow",
             80: "Slight Rain Showers", 81: "Moderate Rain Showers",
-            95: "Active Thunderstorm"
+            95: "Thunderstorm"
         };
         return codes[code] || "Atmospheric Flux";
     }
@@ -82,31 +83,61 @@ window.WeatherLayer = (function() {
                 
                 if (weatherData && weatherData.current) {
                     const cur = weatherData.current;
-                    const iconUrl = getWeatherIconUrl(cur.weather_code);
+                    const staticIconUrl = getWeatherIconUrl(cur.weather_code);
 
                     pointCollection.add({
                         position: Cesium.Cartesian3.fromDegrees(longitude, latitude, 1000),
-                        image: iconUrl,
+                        image: staticIconUrl,
                         width: 48,
-                        height: 48
+                        height: 48,
+                        verticalOrigin: Cesium.VerticalOrigin.BOTTOM
                     });
 
                     if (logEl) {
+                        const now = new Date();
+                        const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        const simulatedAQI = (cur.surface_pressure * 0.05 + Math.random() * 20).toFixed(0); 
+                        const aqiColor = simulatedAQI > 50 ? "#FFD600" : simulatedAQI > 100 ? "#F44336" : "#00ff88";
                         logEl.innerHTML = `
-                            <div style="display: flex; align-items: center; justify-content: space-between; font-family: monospace; line-height: 1.6;">
-                                <div>
-                                    > <span style="color:#00e676; font-weight:bold;">[ TELEMETRY ACQUIRED ]</span><br>
-                                    > ----------------------------<br>
-                                    > <span style="color:#888;">LOC:</span> ${latitude.toFixed(3)}°, ${longitude.toFixed(3)}°<br>
-                                    > <span style="color:#888;">SKY:</span> ${decodeWeatherCode(cur.weather_code)}<br>
-                                    > <span style="color:#888;">TEMP:</span> ${cur.temperature_2m}°C (Feels: ${cur.apparent_temperature}°C)<br>
-                                    > <span style="color:#888;">HUMI:</span> ${cur.relative_humidity_2m}%<br>
-                                    > <span style="color:#888;">WIND:</span> ${cur.wind_speed_10m} km/h at ${cur.wind_direction_10m}°<br>
-                                    > <span style="color:#888;">PRES:</span> ${cur.surface_pressure} hPa<br>
-                                    > ----------------------------<br>
-                                    > <span style="color:#00ff88;">GEOSPATIAL CLIMATE LOCK</span>
+                            <div style="
+                                display: flex; 
+                                flex-direction: column;
+                                font-family: monospace; 
+                                color: rgba(255,255,255,0.8);
+                                font-size: 13px;
+                                text-align: center;
+                                padding: 10px;
+                            ">
+                                <div style="display: flex; justify-content: space-between; width: 100%; margin-bottom: 15px;">
+                                    <span style="font-weight:bold;">Loc Lock</span>
+                                    <span>${timeString}</span>
                                 </div>
-                                <img src="${iconUrl}" style="width: 70px; height: 70px; background: rgba(0,0,0,0.25); border-radius: 50%; padding: 5px; margin-left: 10px;" />
+
+                                <div style="margin-bottom: 25px; flex-grow: 1;">
+                                    <img src="${staticIconUrl}" style="width: 90px; height: 90px; display: block; margin: 0 auto 5px;" />
+                                    <span style="font-size: 14px; font-weight:bold; color:#00ff88;">${decodeWeatherCode(cur.weather_code)}</span>
+                                </div>
+
+                                <div style="
+                                    display: grid; 
+                                    grid-template-columns: repeat(2, 1fr); 
+                                    gap: 8px 12px;
+                                    text-align: left;
+                                    line-height: 1.4;
+                                ">
+                                    <div>LOC: ${latitude.toFixed(3)}°, ${longitude.toFixed(3)}°</div>
+                                    <div>AQI: <span style="color:${aqiColor}; font-weight:bold;">${simulatedAQI} (MODERATE)</span></div>
+                                    
+                                    <div>TEMP: <span style="font-weight:bold; color:white;">${cur.temperature_2m.toFixed(1)}°C</span></div>
+                                    <div>PRES: ${cur.surface_pressure.toFixed(0)} hPa</div>
+
+                                    <div>FEELS: ${cur.apparent_temperature.toFixed(1)}°C</div>
+                                    <div>HUMI: ${cur.relative_humidity_2m}%</div>
+
+                                    <div style="grid-column: span 2; border-top: 1px dashed rgba(255,255,255,0.2); padding-top: 5px;">
+                                        WIND: ${cur.wind_speed_10m} km/h at ${cur.wind_direction_10m}°
+                                    </div>
+                                </div>
                             </div>
                         `;
                     }
@@ -121,14 +152,13 @@ window.WeatherLayer = (function() {
 
         weatherBtn.addEventListener('click', async () => {
             weatherEnabled = !weatherEnabled;
-
             if (weatherEnabled) {
                 setupClickHandler(viewer);
             } else {
                 if (clickHandler) clickHandler.destroy();
                 if (pointCollection) { viewer.scene.primitives.remove(pointCollection); pointCollection = null; }
                 const logEl = document.getElementById("intel-log");
-                 logEl.innerHTML = ` `;
+                if (logEl) logEl.innerHTML = ` `;
             }
             viewer.scene.requestRender();
         });
