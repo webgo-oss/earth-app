@@ -13,8 +13,11 @@ window.SatelliteLayer = (function () {
     const FOLLOW_ALT = 2500000; 
 
     // Fetched through our own server (/api/tle) so it works on Render with no CORS issues.
+    // If the server can't reach any TLE host, try straight from the visitor's browser (their IP isn't blocked).
     var TLE_SOURCES = [
-        { url: '/api/tle', auto: true }
+        { url: '/api/tle' },
+        { url: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=tle' },
+        { url: 'https://db.satnogs.org/api/tle/?format=json&page_size=2000' }
     ];
 
     function updateIntel(msg) {

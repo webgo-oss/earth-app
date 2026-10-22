@@ -83,7 +83,7 @@ window.FlightLayer = (function() {
             const data = await response.json();
             const states = (data.states || []).filter(s => 
                 s[5] !== null && s[6] !== null && s[7] !== null && !s[8]
-            );
+            ).slice(0, 6000);
 
             if (!pointCollection) pointCollection = viewer.scene.primitives.add(new Cesium.BillboardCollection());
             if (!labelCollection) labelCollection = viewer.scene.primitives.add(new Cesium.LabelCollection());
@@ -126,30 +126,12 @@ window.FlightLayer = (function() {
                     });
                 }
 
-                if (activeLabels[icao]) {
-                    const l = activeLabels[icao];
-                    l.position = pos;
-                    l.text = callsign;
-                } else {
-                    activeLabels[icao] = labelCollection.add({
-                        position: pos,
-                        text: callsign,
-                        font: '9px "Courier New"',
-                        fillColor: Cesium.Color.fromCssColorString('#00ccff').withAlpha(0.92),
-                        outlineColor: Cesium.Color.BLACK.withAlpha(0.85),
-                        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-                        pixelOffset: new Cesium.Cartesian2(10, -6),
-                        horizontalOrigin: Cesium.HorizontalOrigin.LEFT,
-                        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-                        scaleByDistance: new Cesium.NearFarScalar(150000, 1.0, 3000000, 0.0),
-                    });
-                }
-            });
+                        });
 
             Object.keys(activeBillboards).forEach(icao => {
                 if (!freshIcaos.has(icao)) {
                     pointCollection.remove(activeBillboards[icao]);
-                    labelCollection.remove(activeLabels[icao]);
+                    if (activeLabels[icao]) labelCollection.remove(activeLabels[icao]);
                     delete activeBillboards[icao];
                     delete activeLabels[icao];
                 }
