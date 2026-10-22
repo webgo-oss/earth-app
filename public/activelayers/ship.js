@@ -22,8 +22,7 @@ window.ShipLayer = (function () {
     const POV_HEADING       = 0;      
 
     const REST_SOURCES = [
-        'https://meri.digitraffic.fi/api/ais/v1/locations',
-        'https://corsproxy.io/?' + encodeURIComponent('https://meri.digitraffic.fi/api/ais/v1/locations')
+        'https://meri.digitraffic.fi/api/ais/v1/locations'
     ];
 
     const NAV_STATUS = ['UNDERWAY', 'ANCHORED', 'NOT COMMANDED', 'RESTRICTED', 'CONSTRAINED',

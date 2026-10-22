@@ -12,14 +12,9 @@ window.SatelliteLayer = (function () {
 
     const FOLLOW_ALT = 2500000; 
 
-    var _SATNOGS   = 'https://db.satnogs.org/api/tle/?format=json&page_size=2000';
-    var _CELESTRAK = 'https://celestrak.org/pub/TLE/active.txt';
-
+    // Fetched through our own server (/api/tle) so it works on Render with no CORS issues.
     var TLE_SOURCES = [
-        { url: 'https://corsproxy.io/?' + encodeURIComponent(_SATNOGS), isJson: true, parser: 'satnogs' },
-        { url: 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(_SATNOGS), isJson: true, parser: 'satnogs' },
-        { url: 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(_CELESTRAK), isJson: false, parser: 'tle' },
-        { url: 'https://api.allorigins.win/raw?url=' + encodeURIComponent(_CELESTRAK), isJson: false, parser: 'tle' },
+        { url: '/api/tle', auto: true }
     ];
 
     function updateIntel(msg) {
@@ -60,15 +55,18 @@ window.SatelliteLayer = (function () {
         return fetch(src.url)
             .then(function (r) {
                 if (!r.ok) throw new Error('HTTP ' + r.status);
-                return src.isJson ? r.json() : r.text();
+                var ct = (r.headers.get('content-type') || '').toLowerCase();
+                return ct.indexOf('json') !== -1
+                    ? r.json().then(function (d) { return { json: true, d: d }; })
+                    : r.text().then(function (d) { return { json: false, d: d }; });
             })
-            .then(function (data) {
-                var parsed = (src.parser === 'satnogs') ? parseSatNogsJson(data) : parseTLE(data);
+            .then(function (res) {
+                var parsed = res.json ? parseSatNogsJson(res.d) : parseTLE(res.d);
                 if (parsed.length === 0) throw new Error('no satellites parsed');
                 return parsed;
             })
             .catch(function (err) {
-                console.warn('Source ' + idx + ' failed. Trying next...');
+                console.warn('Source ' + idx + ' failed:', err.message, '- trying next...');
                 return tryNext(sources, idx + 1);
             });
     }

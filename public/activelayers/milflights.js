@@ -60,24 +60,9 @@ window.MilFlightLayer = (function() {
 
     async function fetchAndRender(viewer) {
         try {
-            const directUrl = API_URL;
-            const proxy1 = 'https://corsproxy.io/?' + encodeURIComponent(directUrl);
-            const proxy2 = 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(directUrl);
-            
-            let response;
-            try {
-                response = await fetch(directUrl);
-                if (!response.ok) throw new Error();
-            } catch {
-                try {
-                    response = await fetch(proxy1);
-                } catch {
-                    response = await fetch(proxy2);
-                }
-            }
+            const response = await fetch('/api/mil');
+            if (!response.ok) throw new Error('Military flights fetch failed: HTTP ' + response.status);
 
-            if (!response.ok) throw new Error(`All fetch attempts failed`);
-            
             const data = await response.json();
             const aircraft = (data.ac || []).filter(a => a.lat !== undefined && a.lon !== undefined);
 
