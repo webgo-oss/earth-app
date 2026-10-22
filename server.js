@@ -36,26 +36,78 @@ async function getOpenSkyHeaders() {
 
 let flightCache = { data: null, ts: 0 };
 let flightInflight = null;
-const FLIGHT_TTL = 15000;
+let openskyDownUntil = 0;   // circuit breaker: skip OpenSky for a while after it fails
+let flightErrors = [];
+const FLIGHT_TTL = 20000;
+
+// Fallback: no-key ADS-B feed (adsb.lol), queried around busy regions and converted to OpenSky's "states" shape.
+const FALLBACK_POINTS = [
+  [40, -74], [34, -118], [41, -88], [33, -97], [28, -81], [49, -123], [45, -75],   // North America
+  [51, 0], [49, 9], [41, 12], [40, -4], [55, 25],                                  // Europe
+  [25, 55], [28, 77], [19, 73], [13, 100], [1, 104],                               // Middle East / Asia
+  [35, 139], [31, 121], [37, 127], [23, 113],                                      // East Asia
+  [-34, 151], [-23, -46], [-26, 28], [-1, 37]                                      // AUS / S.America / Africa
+];
+
+async function fetchFallbackStates() {
+  const results = await Promise.allSettled(FALLBACK_POINTS.map(([lat, lon]) =>
+    axios.get(`https://api.adsb.lol/v2/point/${lat}/${lon}/250`, { timeout: 12000 })));
+  const seen = new Map();
+  let okCount = 0;
+  for (const r of results) {
+    if (r.status !== 'fulfilled') continue;
+    okCount++;
+    for (const a of (r.value.data.ac || [])) {
+      if (a.lat === undefined || a.lon === undefined || !a.hex || seen.has(a.hex)) continue;
+      const onGround = a.alt_baro === 'ground';
+      const altM = onGround ? 0 : (typeof a.alt_baro === 'number' ? a.alt_baro * 0.3048 : (a.alt_geom || 0) * 0.3048);
+      seen.set(a.hex, [
+        a.hex, (a.flight || '').trim(), a.r || 'Unknown', null, null,
+        a.lon, a.lat, altM, onGround,
+        a.gs ? a.gs * 0.514444 : null, a.track ?? null
+      ]);
+    }
+  }
+  if (!okCount) throw new Error('fallback feed unreachable');
+  return { time: Math.floor(Date.now() / 1000), states: Array.from(seen.values()) };
+}
+
+async function refreshFlights() {
+  flightErrors = [];
+  if (Date.now() > openskyDownUntil) {
+    try {
+      const headers = await getOpenSkyHeaders();
+      const r = await axios.get('https://opensky-network.org/api/states/all', { headers, timeout: 20000 });
+      flightCache = { data: r.data, ts: Date.now(), source: 'opensky' };
+      return;
+    } catch (e) {
+      const code = e.response?.status || e.message;
+      flightErrors.push({ source: 'opensky', error: String(code) });
+      console.error('OpenSky States Error:', code,
+        code === 401 || code === 403 ? '(check OPENSKY_CLIENT_ID / OPENSKY_CLIENT_SECRET env vars)' : '');
+      openskyDownUntil = Date.now() + 5 * 60 * 1000; // don't retry for 5 min
+    }
+  }
+  try {
+    const data = await fetchFallbackStates();
+    flightCache = { data, ts: Date.now(), source: 'adsb.lol' };
+    console.log('Flights from adsb.lol fallback:', data.states.length);
+  } catch (e) {
+    flightErrors.push({ source: 'adsb.lol', error: String(e.message) });
+    throw e;
+  }
+}
 
 app.get('/api/flights', async (req, res) => {
   try {
     if (!flightCache.data || Date.now() - flightCache.ts > FLIGHT_TTL) {
-      flightInflight = flightInflight || (async () => {
-        const headers = await getOpenSkyHeaders();
-        const r = await axios.get('https://opensky-network.org/api/states/all', { headers, timeout: 25000 });
-        flightCache = { data: r.data, ts: Date.now() };
-      })().finally(() => { flightInflight = null; });
+      flightInflight = flightInflight || refreshFlights().finally(() => { flightInflight = null; });
       try { await flightInflight; }
-      catch (e) {
-        console.error('OpenSky States Error:', e.response?.status || e.message,
-          e.response?.status === 401 || e.response?.status === 403 ? '(check OPENSKY_CLIENT_ID / OPENSKY_CLIENT_SECRET env vars on Render)' : '');
-        if (!flightCache.data) throw e;
-      }
+      catch (e) { if (!flightCache.data) throw e; }
     }
     res.json(flightCache.data);
   } catch (error) {
-    res.status(502).json({ error: 'Failed to fetch flight states', detail: error.response?.status || error.message });
+    res.status(502).json({ error: 'Failed to fetch flight states', sources: flightErrors });
   }
 });
 
